@@ -1,0 +1,16 @@
+body {
+    background-image: url("pokemon2.jpg");
+    background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: greenyellow;
+}
+
+#rubrikDiv {
+  background-color: greenyellow;
+  width: 85%;
+}
+
+#rubrik {
+  font-size: 50px;
+}
