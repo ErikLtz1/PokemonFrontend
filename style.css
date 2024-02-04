@@ -14,3 +14,36 @@ body {
 #rubrik {
   font-size: 50px;
 }
+.flex-container {
+  display: flex;
+  flex-wrap: wrap; 
+}
+#pokedexDiv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+  gap: 10px; 
+}
+#pokemonList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+#pokemonList li {
+  list-style-type: none;
+  
+  padding: 25px;
+}
+#pokedexBtn {
+  background-image: url('pokedex.jpg'); 
+  background-size: cover; 
+  font-weight: bold; 
+  font-family: 'Arial', sans-serif;
+  font-size: 20px; 
+  color: black; 
+  padding: 10px 20px; 
+  border: none; 
+  cursor: pointer; 
+  height: 120px;
+  width: 120px;
+}
+

@@ -1,172 +1,151 @@
 let pokemonList = document.getElementById("pokemonList");
 let pokeImg = document.getElementById("pokeImg");
 let pokedexBtn = document.getElementById("pokedexBtn");
-let pokedexDiv = document.getElementById("pokedexDiv")
+let pokedexDiv = document.getElementById("pokedexDiv");
 
 
-let pokemonCaptured = false;
-
+//Hämtar information om de första 20 pokemon
 fetch("https://pokeapi.co/api/v2/pokemon?limit=20")
   .then((res) => res.json())
   .then((data20) => {
-    
+    //Loopar igenom varje pokemon i resultatet
     data20.results.forEach((pokemon) => {
-      
-      
+      //hämtar detaljerad information om varje pokemon för att nå pokemons img
+      fetch(pokemon.url)
+        .then((res) => res.json())
+        .then((dataPoke) => {
+          //Skapar li, img och gör varje pokemon till en länk
+          let li = document.createElement("li");
 
-        let li = document.createElement("li");
-        let link = document.createElement("a");
+          let img = document.createElement("img");
+          img.src = dataPoke.sprites.front_default;
 
-        link.href = pokemon.url;
-        link.innerText = pokemon.name;
+          let link = document.createElement("a");
+          link.href = "#";
 
-        link.addEventListener("click", function (event) {
-          event.preventDefault();
-          fetchPokemonDetails(pokemon.url);
+          //Eventlyssnare när man klickar på länken
+          link.addEventListener("click", function (event) {
+            event.preventDefault();
+            pokeImg.innerHTML = "";
+            pokedexDiv.innerHTML = "";
+
+            //Skapar en h2, img och fånga knapp till pokemonen man klickar på
+            let pokemonName = document.createElement("h2");
+            pokemonName.innerText = `Name: ${dataPoke.name}`;
+
+            let pokemonImage = document.createElement("img");
+            pokemonImage.src = dataPoke.sprites.front_default;
+
+            let catchButton = document.createElement("button");
+            catchButton.innerText = "Catch Pokemon";
+
+            // Lägger till skapade element i pokeImg-diven
+            pokeImg.appendChild(pokemonName);
+            pokeImg.appendChild(pokemonImage);
+            pokeImg.appendChild(catchButton);
+            //eventlistener när man klickar på att fånga-knappen
+            catchButton.addEventListener("click", function (event) {
+              event.preventDefault();
+              pokeImg.innerHTML = "";
+              alert("Du fångade " + dataPoke.name + " som har lagts till i din Pokedex!");
+
+              //Skapar ett objekt med info om den fångade pokemonen
+              let existingPokemon = {
+                id: dataPoke.id,
+                name: dataPoke.name,
+                picURL: dataPoke.sprites.front_default,
+              };
+
+              //skickar en post-förfrågan om att lägga till den nya pokemonen i databasen
+              fetch("http://localhost:8080/pokemon", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(existingPokemon),
+              })
+                .then((res) => res.json())
+                .then((response) => {
+                  console.log(response);
+                  
+                })
+                .catch((error) => {
+                  console.error("Något gick fel vid skapande av Pokemon:", error);
+                });
+            });
+
+            
+            
+          });
+          
+          link.appendChild(img);
+          li.appendChild(link);
+          pokemonList.appendChild(li);
+        })
+        .catch((error) => {
+          console.error("Något gick fel vid hämtning av Pokemon-detaljer:", error);
         });
-
-        li.appendChild(link);
-        pokemonList.appendChild(li);
-      
     });
   })
   .catch((error) => {
     console.error("Något gick fel:", error);
   });
 
-  function fetchPokemonDetails(url) {
-    fetch(url)
-      .then((res) => res.json())
-      .then((pokemonDetails) => {
-        let imageUrl;
-  
-        
-        if (pokemonDetails.sprites && pokemonDetails.sprites.front_default) {
-          imageUrl = pokemonDetails.sprites.front_default;
-        } else if (pokemonDetails.sprites && pokemonDetails.sprites.other && pokemonDetails.sprites.other['official-artwork'] && pokemonDetails.sprites.other['official-artwork'].front_default) {
-          imageUrl = pokemonDetails.sprites.other['official-artwork'].front_default;
-        } else {
-          console.error('Bild-URL saknas i Pokemon-detaljerna.');
-          return;
-        }
-  
-        let img = document.createElement("img");
-        img.src = imageUrl;
-  
-        let catchButton = document.createElement("button");
-        catchButton.innerText = "Fånga Pokemon";
-  
-        catchButton.addEventListener("click", function (event) {
-          event.preventDefault();
-          console.log("Fångade Pokemon: " + pokemonDetails.name);
-          pokeImg.innerHTML = "";
-          alert("Du fångade " + pokemonDetails.name + " som har lagts till i din Pokedex!");
-  
-          let existingPokemon = {
-            id: pokemonDetails.id,
-            name: pokemonDetails.name,
-            picURL: imageUrl, 
-          };
-  
-          fetch("http://localhost:8080/pokemon", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(existingPokemon),
+
+//Eventlistener för tryck på pokedex-bilden
+pokedexBtn.addEventListener("click", function (event) {
+  //Hämtar information om vilka pokemon som är sparade i databasen
+  fetch("http://localhost:8080/pokemons")
+    .then((res) => res.json())
+    .then((pokedex) => {
+      event.preventDefault();
+      console.log(pokedex);
+
+      pokedexDiv.innerHTML = "";
+
+      //Loopar igenom varje fångad pokemon och skapar en ul med ett h2 och release-knapp i
+      pokedex.forEach((pokemon) => {
+        let ul = document.createElement("ul");
+
+        let h2Name = document.createElement("h2");
+        h2Name.innerText = `Name: ${pokemon.name}`;
+        ul.appendChild(h2Name)
+        let releaseButton = document.createElement("button");
+        releaseButton.innerText = "Release Pokemon";
+
+        let liButton = document.createElement("li");
+        liButton.appendChild(releaseButton);
+        ul.appendChild(liButton);
+
+        pokedexDiv.appendChild(ul);
+
+        //eventlistener som fetchar deletemapping och pokemon med ett specifikt id och raderar
+        releaseButton.addEventListener("click", function (releaseEvent) {
+          releaseEvent.preventDefault();
+          alert("Du släppte ut en pokemon från ditt Pokedex!");
+
+          fetch(`http://localhost:8080/pokemon/${pokemon.id}`, {
+            method: "DELETE",
           })
-            .then((res) => res.json())
-            .then((response) => {
-              console.log(response);
-              pokemonCaptured = true;
+            .then((res) => {
+              if (res.ok) {
+                return res.text();
+              } else {
+                throw new Error(`Misslyckades att radera Pokemon: ${res.statusText}`);
+              }
+            })
+            .then((deletePokeData) => {
+              ul.remove();
             })
             .catch((error) => {
-              console.error("Något gick fel vid skapande av Pokemon:", error);
+              console.error("Något gick fel vid radering av Pokemon:", error);
             });
         });
-  
-        pokeImg.innerHTML = "";
-        pokeImg.appendChild(img);
-        pokeImg.appendChild(catchButton);
-  
-        console.log("ID:", pokemonDetails.id);
-        console.log("Namn:", pokemonDetails.name);
-        console.log("BildURL: ", imageUrl);
-      })
-      .catch((error) => {
-        console.error("Något gick fel vid hämtning av Pokemon-detaljer:", error);
-      });
-  }
-  
-  
-  
 
-  pokedexBtn.addEventListener("click", function (event) {
-    fetch("http://localhost:8080/pokemons")
-      .then((res) => res.json())
-      .then((pokedex) => {
-        event.preventDefault();
-        console.log(pokedex);
-  
         
-        pokedexDiv.innerHTML = "";
-  
-        
-        pokedex.forEach((pokemon) => {
-          let ul = document.createElement("ul");
-  
-          
-          let liName = document.createElement("li");
-          liName.innerText = `Namn: ${pokemon.name}`;
-          ul.appendChild(liName);
-  
-          
-          let releaseButton = document.createElement("button");
-          releaseButton.innerText = "Släpp Pokemon";
-  
-          releaseButton.addEventListener("click", function (releaseEvent) {
-            releaseEvent.preventDefault();
-          
-            
-            fetch(`http://localhost:8080/pokemon/${pokemon.id}`, {
-              method: "DELETE",
-            })
-              .then((res) => {
-                if (res.ok) {
-                  
-                  return res.text();
-                } else {
-                  throw new Error(`Failed to delete Pokemon: ${res.statusText}`);
-                }
-              })
-              .then((deletePokeData) => {
-                
-                ul.remove();
-              })
-              .catch((error) => {
-                console.error("Något gick fel vid radering av Pokemon:", error);
-              });
-          
-            console.log("Släpp Pokemon: " + pokemon.name);
-          });
-          
-          
-          
-  
-          
-          let liButton = document.createElement("li");
-          liButton.appendChild(releaseButton);
-          ul.appendChild(liButton);
-  
-          
-          pokedexDiv.appendChild(ul);
-        });
-      })
-      .catch((error) => {
-        console.error("Något gick fel:", error);
       });
-  });
-  
-  
-
-
+    })
+    .catch((error) => {
+      console.error("Något gick fel:", error);
+    });
+});
